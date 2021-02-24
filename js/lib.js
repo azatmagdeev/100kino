@@ -24,12 +24,13 @@ export class Theater {
     }
 
     async getData(success, fail) {
-        const res = await fetch('../data.json');
+        const res = await fetch('test/tv-series.json');
+        // const res = await fetch('https://api.kinopoisk.cloud/movies/all/page/1/token/edb3459246278d42b9e56a9ff5e3427b');
         console.log(res);
         if (res.ok) {
             this.films = await res.json();
-            console.log(this.films.length)
-            console.log(this.films);
+
+            this.films = await this.films['tv-series'];
             await success();
         } else {
             fail()
@@ -50,29 +51,29 @@ export class View {
         this.theater.films.map(item => {
             document.getElementById('desk').innerHTML += `
             <div class="card">
-                <a href="?${item.id}">
-                    <img src="img/${item.id}.jpg" alt="">
-                    <p id="${item.id}">${item.name}</p>
+                <a href="?${item.id_kinopoisk}">
+                    <img src="https:/${item.poster}" alt="">
+                    <p id="${item.id_kinopoisk}">${item.title}</p>
                 </a>
             </div>`;
         })
     }
 
     showFilmCard(id) {
-        console.log( this.theater.films.filter(item => Number(id) === item.id));
-        const film = this.theater.films.filter(item => Number(id) === item.id)[0];
+        console.log( this.theater.films.filter(item => Number(id) === item.id_kinopoisk));
+        const film = this.theater.films.filter(item => Number(id) === item.id_kinopoisk)[0];
         console.log('film',film);
         !film.age ? film.age = '' : null;
         this.root.innerHTML = `
             <section class="one">
                 <div class="image">
-                    <img src="img/${id}.jpg" alt="">
+                    <img src="https:/${film.poster}" alt="">
                 </div>
                 <div class="section-one__title">
-                    <h1>${film.name}</h1>
-                    <h4 class="grey">${film.altName + ' ' + film.year}</h4>
-                    <p class="grey">${film.country}</p>
-                    <p class="grey">${film.genre}</p>
+                    <h1>${film.title}</h1>
+                    <h4 class="grey">${film.title_alternative + ' ' + film.year}</h4>
+                    <p class="grey">${film.countries}</p>
+                    <p class="grey">${film.genres}</p>
         
          <p>${film.age}</p>
         <a href="?trailer&${id}">
@@ -81,7 +82,7 @@ export class View {
                 </div>
             </section>
             <section class="two">
-                <p>${film.desc}</p>
+                <p>${film.description}</p>
                 <a href="?film&${id}">
                     <button id="show">Смотреть фильм</button>
                 </a>
@@ -90,7 +91,7 @@ export class View {
 
     show(id, type) {
 
-        const film = this.theater.films.filter(item => Number(id) === item.id)[0];
+        const film = this.theater.films.filter(item => Number(id) === item.id_kinopoisk)[0];
         this.root.innerHTML = `<div id="yohoho" data-title></div>`;
         const yohoho = document.getElementById('yohoho');
 
@@ -99,11 +100,10 @@ export class View {
             yohoho.setAttribute('data-player', 'trailer');
 
             if (!film.trailer || film.trailer === '') {
-                yohoho.setAttribute('data-title', `${film.name} / ${film.altName} (${film.year})`)
+                yohoho.setAttribute('data-title', `${film.title} / ${film.title_alternative} (${film.year})`)
             } else {
                 document.querySelector('main').innerHTML = `
                        <iframe  src="${film.trailer}"
-                       frameborder="0"
                        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
                        allowfullscreen
                        style="width:100%;height:${window.innerHeight - 160}px"

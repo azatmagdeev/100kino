@@ -50,7 +50,7 @@ feedbackBtn.addEventListener('click',()=>{
 
 const sendBtn = document.getElementById('sendBtn');
 
-sendBtn.addEventListener('click',(e)=>{
+sendBtn.addEventListener('click',()=>{
     // e.preventDefault();
 
 
@@ -78,3 +78,6 @@ closeBtn.addEventListener('click',e=>{
     feedbackForm.feedbackMessage.value = "";
     document.querySelector('.popup-bg').style.visibility = 'hidden'
 })
+
+// const data = await fetch('https://api.kinopoisk.cloud/movies/all/page/1/token/edb3459246278d42b9e56a9ff5e3427b')
+// console.log(data)
