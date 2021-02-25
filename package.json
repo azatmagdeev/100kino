@@ -10,7 +10,6 @@
   "license": "ISC",
   "dependencies": {
     "mongodb": "^3.6.4",
-    "mongoose": "^5.11.17",
     "node-fetch": "^2.6.1"
   }
 }
