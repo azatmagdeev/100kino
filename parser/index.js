@@ -6,27 +6,28 @@ const mongoClient = new MongoClient(
     {useUnifiedTopology: true}
 )
 
+let database = {}
+let logCollection = {}
+let usersCollection = {}
+let pageNumber
+let i = 1
+let max_i = 1
+
 async function run() {
     try {
         await mongoClient.connect()
-        const database = mongoClient.db('test_db')
-        const logCollection = database.collection('log')
+        console.log('db connect...')
+        database = mongoClient.db('test_db')
+        logCollection = database.collection('log')
+        usersCollection = database.collection('users')
 
-        let pageNumber = await getPageNumber(logCollection)
-        pageNumber++
-
-        await getMoviesFromApi(pageNumber)
-
-
-
-
+        await getPageNumber(logCollection)
 
     } finally {
+        console.log('db connect close!')
         await mongoClient.close();
     }
 }
-
-run().catch(console.dir);
 
 /**
  * get number of last parsed page
@@ -34,18 +35,55 @@ run().catch(console.dir);
  * @returns {Promise<number|*|boolean>}
  */
 async function getPageNumber(collection) {
-
     let array = await query(collection,
         {success: true}, {page: -1}, 1
     )
-
     if (array.length === 0) array = await query(collection,
         {success: false}, {page: -1}, 1
     )
-
-    return array[0].page
-        ? array[0].page
+    pageNumber = await array[0].page
+    return typeof pageNumber === 'number'
+        ? await getMoviesFromApi()
         : new Error('cant get page number from log collection')
+}
+
+async function getMoviesFromApi() {
+    console.log('pageNumber + i = ', pageNumber + i)
+    const response = await fetch('https://qjsonplaceholder.typicode.com/users');
+    const data = await response.json();
+    return data
+        ? await saveData(data)
+        : (
+            await writeLog(pageNumber + i, false),
+                new Error('cant fetch movies by api')
+        )
+}
+
+
+async function saveData(data) {
+    const result = await usersCollection.insertMany(data);
+    console.log('result = ',result.result);
+    if (await result.result.ok) {
+        await writeLog(pageNumber + i, true)
+        console.log('data successfully saved!')
+        i++
+        if (i > max_i) {
+            console.log('END PROGRAMM')
+            // await mongoClient.close()
+            return false
+        }
+        await getMoviesFromApi()
+    }
+    return result
+}
+
+async function writeLog(page, success) {
+    const log = await logCollection.insertOne({
+        date: new Date,
+        page: page,
+        success: success
+    })
+    console.log('log.result = ',log.result);
 }
 
 /**
@@ -61,32 +99,8 @@ async function query(collection, query, sort, limit) {
     const cursor = await collection
         .find(query).sort(sort).limit(limit);
     await cursor.forEach(o => result.push(o));
-    return result
+    console.log(result)
+    return result;
 }
 
-function getMoviesFromApi(page){
-
-}
-
-
-// MongoClient.connect('mongodb://localhost:27017/test_db', mongoClientCallback)
-//
-// function mongoClientCallback(err, db) {
-//     if (err) return console.error(err)
-//     console.log('db is connected...')
-//
-//     fetch('https://jsonplaceholder.typicode.com/users')
-//         .then(res => res.json())
-//         .then(data => {
-//             console.log('data received...')
-//             saveData(db, data)
-//         })
-// }
-//
-// function saveData(db, data) {
-//     db.db().collection('test_users').insertMany(data, function (err, result) {
-//         if (err) return console.error(err)
-//         console.log('movies has been saved to db!')
-//     });
-// }
-
+run().catch(console.dir);
